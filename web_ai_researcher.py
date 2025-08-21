@@ -917,6 +917,16 @@ def get_env_var_value(key):
     # 检查系统环境变量（包括从.env加载的）
     return os.environ.get(key, "")
 
+js_func = """
+function refresh() {
+    const url = new URL(window.location);
+
+    if (url.searchParams.get('__theme') !== 'light') {
+        url.searchParams.set('__theme', 'light');
+        window.location.href = url.href;
+    }
+}
+"""
 
 def create_ui():
 
@@ -1039,7 +1049,7 @@ def create_ui():
                 updated_index
             )
 
-    with gr.Blocks(theme=gr.themes.Soft(primary_hue="amber")) as app:
+    with gr.Blocks(theme=gr.themes.Default(primary_hue=gr.themes.colors.red, secondary_hue=gr.themes.colors.pink), js=js_func) as app:
     #     gr.HTML("""
     #             <script>
     #             function scrollToBottom() {
