@@ -340,7 +340,7 @@ def parse_logs_incrementally(logs, state_list, last_index):
 
         # ✅ 每轮独立处理 user_content
         if convo["user_content"].strip():
-            section_input = f"### 🙋 User ({convo['user_time']})\n```markdown\n{convo['user_content'].strip()}\n```"
+            section_input = f"### 🙋 用户 ({convo['user_time']})\n```markdown\n{convo['user_content'].strip()}\n```"
         else:
             section_input = ""
 
@@ -365,7 +365,7 @@ def parse_logs_incrementally(logs, state_list, last_index):
             )
         if convo["tool_calls_content"].strip():
             output_parts.append(
-                f"### 🛠️ Tool Calls\n```python\n{convo['tool_calls_content'].strip()}\n```"
+                f"### 🛠️ 工具调用\n```python\n{convo['tool_calls_content'].strip()}\n```"
             )
         
         # 处理 Tool Execution 内容（只显示允许的工具，并放在markdown代码块中）
@@ -384,7 +384,7 @@ def parse_logs_incrementally(logs, state_list, last_index):
             if tool_name in allowed_tools:
                 tool_execution_content = convo["tool_execution_content"].strip()
                 output_parts.append(
-                    f"### ⚙️ Tool Execution\n```markdown\n{tool_execution_content}\n```"
+                    f"### ⚙️ 工具执行\n```markdown\n{tool_execution_content}\n```"
                 )
 
         if output_parts:
@@ -451,10 +451,12 @@ def get_latest_logs(max_lines=500, state=None, queue_source=None, last_index=0):
 
 # Dictionary containing module descriptions
 MODULE_DESCRIPTIONS = {
-    "Detailed Idea Description": "At this level, users provide comprehensive descriptions of their specific research ideas. The system processes these detailed inputs to develop implementation strategies based on the user's explicit requirements. Examples 1-2 are the templates of this mode.",
-    "Reference-Based Ideation": "This simpler level involves users submitting reference papers without a specific idea in mind. The user query typically follows the format: "'"I have some reference papers, please come up with an innovative idea and implement it with these papers."'" The system then analyzes the provided references to generate and develop novel research concepts. Examples 3-4 are the templates of this mode.",
-    "Paper Generation Agent": "Once all research and experimental work is finished, employ this agent for paper generation",
-    # "exit": "exit mode"
+    # 在这一层级，用户会对其具体的研究想法进行全面的描述。系统会处理这些详细的输入，并根据用户的明确需求制定实施策略。示例 1-2 是该模式的模板。
+    "详细想法描述": "在这一层级，用户会对其具体的研究想法进行全面的描述。系统会处理这些详细的输入，并根据用户的明确需求制定实施策略。示例 1-2 是该模式的模板。",
+    # 这一较为简单的层级中，用户在没有明确研究想法的情况下提交参考论文。用户的请求通常采用这样的格式：“我有一些参考论文，请基于这些论文提出一个创新性的想法并加以实现。” 系统随后会对所提供的参考文献进行分析，从而生成并发展新的研究概念。示例 3-4 是该模式的模板。
+    "基于参考论文构思": "这一较为简单的层级中，用户在没有明确研究想法的情况下提交参考论文。用户的请求通常采用这样的格式：“我有一些参考论文，请基于这些论文提出一个创新性的想法并加以实现。” 系统随后会对所提供的参考文献进行分析，从而生成并发展新的研究概念。示例 3-4 是该模式的模板。",
+    # 一旦所有研究和实验工作完成后，可以使用该智能体来生成论文。
+    "论文生成智能体": "一旦所有研究和实验工作完成后，可以使用该智能体来生成论文。",
 }
 
 # 默认环境变量模板
@@ -518,7 +520,7 @@ def run_ai_researcher(question: str, reference: str, example_module: str) -> Tup
     # 验证输入
     if not validate_input(question):
         logging.warning("User submitted invalid input")
-        return ("Please enter a valid question", "0", "❌ Error: Invalid input question")
+        return ("请输入有效的问题", "0", "❌ 错误：无效的问题")
 
     try:
         # 确保环境变量已加载
@@ -529,9 +531,9 @@ def run_ai_researcher(question: str, reference: str, example_module: str) -> Tup
         if example_module not in MODULE_DESCRIPTIONS:
             logging.error(f"User selected an unsupported module: {example_module}")
             return (
-                f"Selected module '{example_module}' is not supported",
+                f"所选模式 '{example_module}' 暂不支持",
                 "0",
-                "❌ Error: Unsupported module",
+                "❌ 错误：不支持的模式",
             )
 
  
@@ -544,9 +546,9 @@ def run_ai_researcher(question: str, reference: str, example_module: str) -> Tup
         except Exception as e:
             logging.error(f"Error occurred while running Researcher: {str(e)}")
             return (
-                f"Error occurred while running Researcher: {str(e)}",
+                f"运行 Researcher 时发生错误：{str(e)}",
                 "0",
-                f"❌ Error: Run failed - {str(e)}",
+                f"❌ 错误：运行失败 - {str(e)}",
             )
 
         token_info = None
@@ -558,24 +560,24 @@ def run_ai_researcher(question: str, reference: str, example_module: str) -> Tup
         total_tokens = completion_tokens + prompt_tokens
 
         logging.info(
-            f"Processing completed, token usage: completion={completion_tokens}, prompt={prompt_tokens}, total={total_tokens}"
+            f"处理完成，令牌用量：completion={completion_tokens}, prompt={prompt_tokens}, total={total_tokens}"
         )
 
         return (
             answer,
-            f"Completion tokens: {completion_tokens:,} | Prompt tokens: {prompt_tokens:,} | Total: {total_tokens:,}",
-            "✅ Successfully completed",
+            f"完成令牌：{completion_tokens:,} | 提示令牌：{prompt_tokens:,} | 总计：{total_tokens:,}",
+            "✅ 已成功完成",
         )
 
     except Exception as e:
         logging.error(
             f"Uncaught error occurred while processing the question: {str(e)}"
         )
-        return (f"Error occurred: {str(e)}", "0", f"❌ Error: {str(e)}")
+        return (f"发生错误：{str(e)}", "0", f"❌ 错误：{str(e)}")
 
 
 def update_module_description(module_name: str) -> str:
-    return MODULE_DESCRIPTIONS.get(module_name, "No description available")
+    return MODULE_DESCRIPTIONS.get(module_name, "暂无描述")
 
 
 # 存储前端配置的环境变量
@@ -664,9 +666,9 @@ def save_env_vars(env_vars):
         global_state.FIRST_MAIN = False
         # autoagent_init(container_name, port, test_pull_name, git_clone, local_env, LOG_FILE)
 
-        return True, "Environment variables have been successfully saved!"
+        return True, "环境变量已成功保存！"
     except Exception as e:
-        return False, f"Error saving environment variables: {str(e)}"
+        return False, f"保存环境变量出错：{str(e)}"
 
 
 def add_env_var(key, value, from_frontend=True):
@@ -679,7 +681,7 @@ def add_env_var(key, value, from_frontend=True):
     """
     try:
         if not key or not key.strip():
-            return False, "Variable name cannot be empty"
+            return False, "变量名不能为空"
 
         key = key.strip()
         value = value.strip()
@@ -695,16 +697,16 @@ def add_env_var(key, value, from_frontend=True):
         set_key(dotenv_path, key, value)
         load_dotenv(dotenv_path, override=True)
 
-        return True, f"Environment variable {key} has been successfully added/updated!"
+        return True, f"环境变量 {key} 已成功添加/更新！"
     except Exception as e:
-        return False, f"Error adding environment variable: {str(e)}"
+        return False, f"添加环境变量出错：{str(e)}"
 
 
 def delete_env_var(key):
     """删除环境变量"""
     try:
         if not key or not key.strip():
-            return False, "Variable name cannot be empty"
+            return False, "变量名不能为空"
 
         key = key.strip()
 
@@ -720,9 +722,9 @@ def delete_env_var(key):
         if key in os.environ:
             del os.environ[key]
 
-        return True, f"Environment variable {key} has been successfully deleted!"
+        return True, f"环境变量 {key} 已成功删除！"
     except Exception as e:
-        return False, f"Error deleting environment variable: {str(e)}"
+        return False, f"删除环境变量出错：{str(e)}"
 
 
 def is_api_related(key: str) -> bool:
@@ -885,7 +887,7 @@ def save_env_table_changes(data):
                         processed_keys.add(key)
         else:
             logging.error(f"Unknown data format: {type(data)}")
-            return f"❌ Save failed: Unknown data format {type(data)}"
+            return f"❌ 保存失败：未知数据格式 {type(data)}"
 
         # 处理删除的变量 - 检查当前环境变量中是否有未在表格中出现的变量
         api_related_keys = {k for k in current_env_vars.keys() if is_api_related(k)}
@@ -896,13 +898,13 @@ def save_env_table_changes(data):
             logging.info(f"Deleting environment variable: {key}")
             delete_env_var(key)
 
-        return "✅ Environment variables have been successfully saved"
+        return "✅ 环境变量已成功保存"
     except Exception as e:
         import traceback
 
         error_details = traceback.format_exc()
         logging.error(f"Error saving environment variables: {str(e)}\n{error_details}")
-        return f"❌ Save failed: {str(e)}"
+        return f"❌ 保存失败：{str(e)}"
 
 
 def get_env_var_value(key):
@@ -1007,7 +1009,7 @@ def create_ui():
             # 始终更新状态
             yield (
                 state,
-                "<span class='status-indicator status-running'></span> Processing...",
+                "<span class='status-indicator status-running'></span> 处理中...",
                 filtered_logs,
                 scroll_script, 
                 updated_index
@@ -1043,7 +1045,7 @@ def create_ui():
             filtered_logs = filter_empty_conversations(logs2)
             yield (
                 state,
-                "<span class='status-indicator status-error'></span> Terminated",
+                "<span class='status-indicator status-error'></span> 已终止",
                 filtered_logs,
                 None, 
                 updated_index
@@ -1069,10 +1071,10 @@ def create_ui():
             <div style="display: flex; align-items: center; gap: 16px;">
                 <img src="{image_base64}" alt="模型图片" style="width: 100px; height: auto;">
                 <div style="display: flex; flex-direction: column;">
-                    <h2 style="margin: 0;">AI-Researcher: Autonomous Scientific Innovation</h2>
+                    <h2 style="margin: 0;">AI-Researcher：自主科学创新</h2>
                     <br>
-                    <p style="margin: 0;">Welcome to AI-Researcher🤗 AI-Researcher introduces a revolutionary breakthrough in Automated</p>
-                    <p style="margin: 0;">Scientific Discovery🔬, presenting a new system that fundamentally Reshapes the Traditional Research Paradigm.</p>
+                    <p style="margin: 0;">欢迎使用 AI-Researcher🤗 我们在自动化科学发现🔬方面带来突破性进展，</p>
+                    <p style="margin: 0;">呈现一个从根本上重塑传统科研范式的新型系统。</p>
                 </div>
             </div>
             """
@@ -1415,19 +1417,19 @@ def create_ui():
                 question_input = gr.Textbox(
                     lines=5,
                     max_lines=10,
-                    placeholder="Please enter your questions...",
-                    label="Prompt",
+                    placeholder="请输入你的问题...",
+                    label="问题",
                     elem_id="question_input",
                     show_copy_button=True,
                     # elem_classes="scrolling-textbox",
-                    value="Write a hello world python file and save it in local file",
+                    value="编写一个 Python hello world 文件并保存到本地",
                 )
 
                 reference_input = gr.Textbox(
                     lines=5,
                     max_lines=10,
-                    placeholder="Please enter your reference papers...",
-                    label="Reference",
+                    placeholder="请输入参考论文...",
+                    label="参考文献",
                     elem_id="reference_input",
                     show_copy_button=True,
                     # elem_classes="scrolling-textbox",
@@ -1438,8 +1440,8 @@ def create_ui():
                 # 只包含MODULE_DESCRIPTIONS中定义的模块
                 module_dropdown = gr.Dropdown(
                     choices=list(MODULE_DESCRIPTIONS.keys()),
-                    value="Detailed Idea Description",
-                    label="Select Mode",
+                    value="详细想法描述",
+                    label="选择模式",
                     interactive=True,
                 )
 
@@ -1447,19 +1449,19 @@ def create_ui():
                 module_description = gr.Textbox(
                     lines=3,
                     max_lines=5,
-                    value=MODULE_DESCRIPTIONS["Detailed Idea Description"],
-                    label="Mode Description",
+                    value=MODULE_DESCRIPTIONS["详细想法描述"],
+                    label="模式说明",
                     interactive=False,
                     elem_classes="module-info",
                 )
 
                 with gr.Row():
                     run_button = gr.Button(
-                        "Run", variant="primary", elem_classes="primary"
+                        "运行", variant="primary", elem_classes="primary"
                     )
 
                 status_output = gr.HTML(
-                    value="<span class='status-indicator status-success'></span> Ready",
+                    value="<span class='status-indicator status-success'></span> 就绪",
                     label="状态",
                 )
                 # token_count_output = gr.Textbox(
@@ -1497,23 +1499,23 @@ def create_ui():
                     gr.Examples(examples=examples, inputs=[question_input, reference_input])
 
                 gr.Markdown("""
-                ### Example Description：
-                1️⃣ Examples 1-2: For **Detailed Idea Description** Mode <br>
-                2️⃣ Examples 3-4: For **Reference-Based Ideation** Mode <br>
-                3️⃣ In Reference-Based Ideation mode, the Question can be a category <br>
-                (existing categories: gnn, diffu_flow, reasoning, recommendation, vq). <br>
-                Also you can design other category like metaprompt.py
+                ### 示例说明：
+                1️⃣ 示例 1-2：用于 **详细想法描述** 模式 <br>
+                2️⃣ 示例 3-4：用于 **基于参考论文构思** 模式 <br>
+                3️⃣ 在“基于参考论文构思”模式下，Question 可以是一个类别 <br>
+                （现有类别：gnn、diffu_flow、reasoning、recommendation、vq），<br>
+                也可以自定义（如 `metaprompt.py`）。
                 """)
 
                 gr.HTML("""
                         <div class="footer" id="about">
-                            <h3>AI-Researcher: Autonomous Scientific Innovation</h3>
-                            <p>© 2025 HKUDS. MIT license <a href="https://github.com/HKUDS/AI-Researcher" target="_blank">GitHub</a></p>
+                            <h3>AI-Researcher：自主科学创新</h3>
+                            <p>© 2025 HKUDS。MIT 许可 <a href="https://github.com/HKUDS/AI-Researcher" target="_blank">GitHub</a></p>
                         </div>
                     """)
 
             with gr.Tabs():  # 设置对话记录为默认选中的标签页
-                with gr.TabItem("Conversation Record"):
+                with gr.TabItem("对话记录"):
                     # 添加对话记录显示区域
                     with gr.Group():
                         log_display2 = gr.Chatbot(
@@ -1528,17 +1530,17 @@ def create_ui():
 
                     with gr.Row():
                         # clear_logs_button2 = gr.Button("Clear Record", variant="secondary")
-                        download_research_logs = gr.Button("Extract research log files")
-                        download_paper_logs = gr.Button("Extract paper log files")
-                        download_paper = gr.Button("Extract paper")
-                        file_output = gr.File(label="click to download", elem_classes="custom-file")
+                        download_research_logs = gr.Button("导出研究日志文件")
+                        download_paper_logs = gr.Button("导出论文日志文件")
+                        download_paper = gr.Button("导出论文")
+                        file_output = gr.File(label="点击下载", elem_classes="custom-file")
 
-                with gr.TabItem("Environment Variable Management", id="env-settings"):
+                with gr.TabItem("环境变量管理", id="env-settings"):
                     with gr.Group(elem_classes="env-manager-container"):
                         gr.Markdown("""
-                            ## Environment Variable Management
+                            ## 环境变量管理
 
-                            Set model API keys and other service credentials here. This information will be saved in a local `.env` file, ensuring your API keys are securely stored and not uploaded to the network. Correctly setting API keys is crucial for the functionality of our system. Environment variables can be flexibly configured according to tool requirements.
+                            请在此设置模型 API 密钥及其他服务凭据。信息将保存在本地 `.env` 文件中，确保密钥安全且不会被上传到网络。正确设置 API 密钥对系统功能至关重要。可根据所用工具按需灵活配置环境变量。
                             """)
 
                         # 主要内容分为两列布局
@@ -1549,16 +1551,16 @@ def create_ui():
                                     # 环境变量表格 - 设置为可交互以直接编辑
                                     gr.Markdown("""
                                     <div style="background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 15px 0; border-radius: 4px;">
-                                      <strong>Tip:</strong> Please make sure to run cp .env_template .env to create a local .env file, and flexibly configure the required environment variables according to the running module
+                                      <strong>提示：</strong> 请先运行 <code>cp .env_template .env</code> 创建本地 <code>.env</code> 文件，并根据运行模块按需灵活配置所需环境变量。
                                     </div>
                                     """)
 
                                     # Enhanced environment variable table, supporting adding and deleting rows
                                     env_table = gr.Dataframe(
                                         headers=[
-                                            "Variable Name",
-                                            "Value",
-                                            "Retrieval Guide",
+                                            "变量名",
+                                            "值",
+                                            "获取指南",
                                         ],
                                         datatype=[
                                             "str",
@@ -1568,7 +1570,7 @@ def create_ui():
                                         row_count=10,  # Increase row count to allow adding new variables
                                         col_count=(3, "fixed"),
                                         value=update_env_table,
-                                        label="API Keys and Environment Variables",
+                                        label="API 密钥与环境变量",
                                         interactive=True,  # Set as interactive, allowing direct editing
                                         elem_classes="env-table",
                                     )
@@ -1577,12 +1579,12 @@ def create_ui():
                                     gr.Markdown(
                                         """
                                     <div style="background-color: #fff3cd; border-left: 6px solid #ffc107; padding: 10px; margin: 15px 0; border-radius: 4px;">
-                                    <strong>Operation Guide</strong>:
+                                    <strong>操作指南</strong>：
                                     <ul style="margin-top: 8px; margin-bottom: 8px;">
-                                      <li><strong>Edit Variable</strong>: Click directly on the "Value" cell in the table to edit</li>
-                                      <li><strong>Add Variable</strong>: Enter a new variable name and value in a blank row</li>
-                                      <li><strong>Delete Variable</strong>: Clear the variable name to delete that row</li>
-                                      <li><strong>Get API Key</strong>: Click on the link in the "Retrieval Guide" column to get the corresponding API key</li>
+                                      <li><strong>编辑变量</strong>：直接点击表格中的“值”单元格进行编辑</li>
+                                      <li><strong>新增变量</strong>：在空白行输入变量名与对应的值</li>
+                                      <li><strong>删除变量</strong>：清空变量名即可删除该行</li>
+                                      <li><strong>获取 API Key</strong>：点击“获取指南”列中的链接</li>
                                     </ul>
                                     </div>
                                     """,
@@ -1592,17 +1594,17 @@ def create_ui():
                                     # Environment variable operation buttons
                                     with gr.Row(elem_classes="env-buttons"):
                                         save_env_button = gr.Button(
-                                            "💾 Save Changes",
+                                            "💾 保存更改",
                                             variant="primary",
                                             elem_classes="env-button",
                                         )
                                         refresh_button = gr.Button(
-                                            "🔄 Refresh List", elem_classes="env-button"
+                                            "🔄 刷新列表", elem_classes="env-button"
                                         )
 
                                     # Status display
                                     env_status = gr.HTML(
-                                        label="Operation Status",
+                                        label="操作状态",
                                         value="",
                                         elem_classes="env-status",
                                     )

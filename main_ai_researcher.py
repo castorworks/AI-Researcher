@@ -51,7 +51,15 @@ def main_ai_researcher(input, reference, mode):
     max_iter_times = int(os.getenv("MAX_ITER_TIMES"))
 
     
-    match mode:
+    # 兼容中文与英文模式名
+    mode_map = {
+        '详细想法描述': 'Detailed Idea Description',
+        '基于参考论文构思': 'Reference-Based Ideation',
+        '论文生成智能体': 'Paper Generation Agent',
+    }
+    normalized_mode = mode_map.get(mode, mode)
+
+    match normalized_mode:
         case 'Detailed Idea Description':
             # global INIT_FLAG
             if global_state.INIT_FLAG is False:
