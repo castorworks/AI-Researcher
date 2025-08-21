@@ -15,6 +15,71 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+
+def safe_json_loads(text: Any) -> Any:
+    """更稳健地解析 JSON 字符串，自动处理 ```json 代码块、前后噪声或多余内容。
+
+    解析顺序：
+    1) 若已是 dict/list，直接返回。
+    2) 去除包裹的三引号代码块与多余空白，直接 json.loads。
+    3) 失败则提取首个完整的 JSON 对象/数组子串再解析。
+    若仍失败，抛出原始异常。
+    """
+    if isinstance(text, (dict, list)):
+        return text
+    if not isinstance(text, str):
+        return text
+
+    s = text.strip()
+    # 去除三引号代码块包裹
+    if s.startswith("```") and s.endswith("```"):
+        s = s[3:-3].strip()
+        # 去除 ```json / ```JSON 语言标记
+        if s.lower().startswith("json"):
+            s = s[4:].strip()
+
+    # 直接尝试
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError as e:
+        # 继续尝试提取首个 JSON 对象/数组
+        pass
+
+    def extract_first_json_segment(text0: str) -> Optional[str]:
+        first_brace = min(
+            (i for i in [text0.find("{"), text0.find("[")] if i != -1),
+            default=-1,
+        )
+        if first_brace == -1:
+            return None
+        stack = []
+        start = first_brace
+        for i, ch in enumerate(text0[first_brace:], start=first_brace):
+            if ch in "[{":
+                stack.append(ch)
+            elif ch in "]}":
+                if not stack:
+                    return None
+                left = stack.pop()
+                if not stack:
+                    return text0[start : i + 1]
+        return None
+
+    segment = extract_first_json_segment(s)
+    if segment is not None:
+        try:
+            return json.loads(segment)
+        except json.JSONDecodeError:
+            pass
+    # 最后再尝试一次去除多余结尾字符（常见为 Markdown 附加文本）
+    for sep in ["\n\n", "\n", "```"]:
+        if sep in s:
+            try:
+                return json.loads(s.split(sep)[0].strip())
+            except json.JSONDecodeError:
+                continue
+    # 仍失败，抛出异常以便上层捕获
+    return json.loads(s)
 def debug_print_swarm(debug: bool, *args: str) -> None:
     if not debug:
         return
@@ -442,7 +507,7 @@ def pretty_print_messages(message, **kwargs) -> None:
     for tool_call in tool_calls:
         f = tool_call["function"]
         name, args = f["name"], f["arguments"]
-        arg_str = json.dumps(json.loads(args)).replace(":", "=")
+        arg_str = json.dumps(safe_json_loads(args)).replace(":", "=")
         console.print(f"[bold purple]{name}[/bold purple]({arg_str[1:-1]})")
     log_path = kwargs.get("log_path", None)
     if log_path:
@@ -451,6 +516,6 @@ def pretty_print_messages(message, **kwargs) -> None:
             for tool_call in tool_calls:
                 f = tool_call["function"]
                 name, args = f["name"], f["arguments"]
-                arg_str = json.dumps(json.loads(args)).replace(":", "=")
+                arg_str = json.dumps(safe_json_loads(args)).replace(":", "=")
                 file.write(f"{name}({arg_str[1:-1]})\n")
 

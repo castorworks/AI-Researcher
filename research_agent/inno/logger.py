@@ -4,6 +4,7 @@ from rich.markup import escape
 import json
 from typing import List
 from research_agent.constant import DEBUG, DEFAULT_LOG, LOG_PATH
+from research_agent.inno.util import safe_json_loads
 from pathlib import Path
 BAR_LENGTH = 60
 class MetaChainLogger:
@@ -16,7 +17,7 @@ class MetaChainLogger:
         with open(self.log_path, 'a') as f:
             f.write(message + '\n')
     def _warp_args(self, args_dict: str):
-        args_dict = json.loads(args_dict)
+        args_dict = safe_json_loads(args_dict)
         args_str = ''
         for k, v in args_dict.items():
             args_str += f"{repr(k)}={repr(v)}, "

@@ -6,9 +6,10 @@ from typing import List, Callable, Union
 from datetime import datetime
 # Local imports
 import litellm
+import difflib
 from litellm import ContextWindowExceededError, BadRequestError
 from litellm.types.utils import Message as litellmMessage
-from .util import function_to_json, debug_print, merge_chunk, pretty_print_messages
+from .util import function_to_json, debug_print, merge_chunk, pretty_print_messages, safe_json_loads
 from .types import (
     Agent,
     AgentFunction,
@@ -192,17 +193,39 @@ class MetaChain:
             name = tool_call.function.name
             # handle missing tool case, skip to next tool
             if name not in function_map:
-                self.logger.info(f"Tool {name} not found in function map.", title="Tool Call Error", color="red")
-                partial_response.messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "name": name,
-                        "content": f"[Tool Call Error] Error: Tool {name} not found.",
-                    }
-                )
-                continue
-            args = json.loads(tool_call.function.arguments)
+                # Try to resolve common issues:
+                # 1) Name concatenation like "fnAfnB" -> pick the longest prefix that matches
+                resolved_name = None
+                for candidate in sorted(function_map.keys(), key=len, reverse=True):
+                    if name.startswith(candidate):
+                        resolved_name = candidate
+                        break
+
+                # 2) Fuzzy match using difflib as a fallback
+                if resolved_name is None:
+                    matches = difflib.get_close_matches(name, list(function_map.keys()), n=1, cutoff=0.6)
+                    if matches:
+                        resolved_name = matches[0]
+
+                if resolved_name and resolved_name in function_map:
+                    self.logger.info(
+                        f"Tool name '{name}' not found. Auto-corrected to '{resolved_name}'.",
+                        title="Tool Name Auto-Correction",
+                        color="yellow",
+                    )
+                    name = resolved_name
+                else:
+                    self.logger.info(f"Tool {name} not found in function map.", title="Tool Call Error", color="red")
+                    partial_response.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "name": name,
+                            "content": f"[Tool Call Error] Error: Tool {name} not found.",
+                        }
+                    )
+                    continue
+            args = safe_json_loads(tool_call.function.arguments)
             
             # debug_print(
             #     debug, f"Processing tool call: {name} with arguments {args}")

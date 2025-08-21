@@ -1,4 +1,5 @@
 import json
+from research_agent.inno.util import safe_json_loads
 
 from research_agent.inno.core import MetaChain
 
@@ -53,7 +54,7 @@ def pretty_print_messages(messages) -> None:
         for tool_call in tool_calls:
             f = tool_call["function"]
             name, args = f["name"], f["arguments"]
-            arg_str = json.dumps(json.loads(args)).replace(":", "=")
+            arg_str = json.dumps(safe_json_loads(args)).replace(":", "=")
             print(f"\033[95m{name}\033[0m({arg_str[1:-1]})")
 
 

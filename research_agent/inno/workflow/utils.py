@@ -1,5 +1,6 @@
 from typing import Dict
 import json
+from research_agent.inno.util import safe_json_loads
 from research_agent.inno.workflow import Graph
 from litellm import completion
 
@@ -84,7 +85,7 @@ You should complete the workflow graph in the following way:
         }
     }
     response = completion(model='gpt-4o-2024-08-06', messages=messages, response_format=response_format)
-    return json.loads(response.choices[0].message.content)
+    return safe_json_loads(response.choices[0].message.content)
 if __name__ == '__main__':
     import os
     os.environ['OPENAI_API_KEY'] = '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'
