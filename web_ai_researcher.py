@@ -191,9 +191,18 @@ def log_reader_thread(log_file):
 def parse_logs_incrementally(logs, state_list, last_index):
     existing_inputs = set()
     existing_pairs = set()
-    for input_text, output_text in state_list:
-        existing_pairs.add((input_text.strip(), output_text.strip()))
-        existing_inputs.add(input_text.strip())
+    # Normalize state_list to a list of (input, output) pairs
+    if not isinstance(state_list, list):
+        state_list = []
+    else:
+        normalized_state = []
+        for pair in state_list:
+            if isinstance(pair, (list, tuple)) and len(pair) == 2:
+                input_text, output_text = pair
+                existing_pairs.add((str(input_text).strip(), str(output_text).strip()))
+                existing_inputs.add(str(input_text).strip())
+                normalized_state.append((input_text, output_text))
+        state_list = normalized_state
 
     conversations = []
     current_convo = None
@@ -432,7 +441,7 @@ def get_latest_logs(max_lines=500, state=None, queue_source=None, last_index=0):
                 logs = [error_msg]
 
     if not logs:
-        return state, 0
+        return state if isinstance(state, list) else [], 0
 
 
     filtered_logs = []
@@ -441,7 +450,7 @@ def get_latest_logs(max_lines=500, state=None, queue_source=None, last_index=0):
             filtered_logs.append(log)
 
     if not filtered_logs:
-        return state, 0
+        return state if isinstance(state, list) else [], 0
 
     final_contents, updated_index = parse_logs_incrementally(filtered_logs, state, last_index)
 
