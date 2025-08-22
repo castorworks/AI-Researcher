@@ -319,9 +319,17 @@ Output the revised experiments section incorporating all these improvements. Rep
             })
 
         # Step 2: Detailize subsections
-        subsections = [line.split('{')[1].split('}')[0] 
-                    for line in structure.split('\n') 
-                    if line.strip().startswith('\\subsection')]
+        subsections = []
+        for line in structure.split('\n'):
+            if line.strip().startswith('\\subsection'):
+                try:
+                    # Extract content between { and }
+                    if '{' in line and '}' in line:
+                        subsection_name = line.split('{')[1].split('}')[0]
+                        subsections.append(subsection_name)
+                except (IndexError, ValueError):
+                    logging.warning(f"Could not parse subsection line: {line}")
+                    continue
         
         subsection_contents = {}
         subsection_checkpoint = self.load_checkpoint(target_paper, "subsections")

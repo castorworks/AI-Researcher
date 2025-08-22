@@ -106,8 +106,7 @@ class DockerEnv:
         while time.time() - start_time < timeout:
             result = subprocess.run(
                 ["docker", "inspect", "--format", "{{.State.Running}}", self.container_name],
-                capture_output=True,
-                text=True
+                capture_output=True, text=True
             )
             print("result.returncode", result.returncode)
             print("result.stdout", result.stdout)
@@ -116,15 +115,32 @@ class DockerEnv:
                 # 额外检查 tcp_server 是否运行
                 try:
                     port_info = check_container_ports(self.container_name)
-                    assert port_info and (port_info[0] == port_info[1])
-                    available_port = port_info[0]
-                    self.communication_port = available_port
-                    result = self.run_command('ps aux')
-                    print("result", result)
-                    if "tcp_server.py" in result['result']:
-                        return True
+                    if port_info:
+                        print(f"Port mapping found: {port_info}")
+                        # 更新通信端口为主机端口
+                        self.communication_port = port_info[0]
+                        
+                        # 尝试运行命令检查 tcp_server 是否运行
+                        try:
+                            result = self.run_command('ps aux')
+                            print("result", result)
+                            if "tcp_server.py" in result.get('result', ''):
+                                return True
+                        except Exception as e:
+                            print(f"Failed to run command in container: {e}")
+                            # 如果无法运行命令，可能是 tcp_server 还没启动，继续等待
+                    else:
+                        print("No port mapping found, but container is running")
                 except Exception as e:
                     print(f"Failed to check container ports: {e}")
+                    # 即使端口检测失败，也尝试直接连接容器
+                    try:
+                        result = self.run_command('ps aux')
+                        print("Direct connection result:", result)
+                        if "tcp_server.py" in result.get('result', ''):
+                            return True
+                    except Exception as conn_e:
+                        print(f"Direct connection also failed: {conn_e}")
                 
             time.sleep(1)
             
