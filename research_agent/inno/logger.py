@@ -59,45 +59,78 @@ class MetaChainLogger:
         self.console.print(self._wrap_title("Tool Execution", "bold pink3"))
         self.console.print(self._wrap_timestamp(timestamp, color=True))
         self.console.print("[bold blue]Tool Execution:[/bold blue]", end=" ")
-        self.console.print(f"[bold purple]{message['name']}[/bold purple]\n[bold blue]Result:[/bold blue]")
-        self.console.print(f"---\n{escape(message['content'])}\n---")
+        name = getattr(message, 'name', None) or message.get('name', 'Unknown')
+        content = getattr(message, 'content', None) or message.get('content', '')
+        self.console.print(f"[bold purple]{name}[/bold purple]\n[bold blue]Result:[/bold blue]")
+        self.console.print(f"---\n{escape(content)}\n---")
     def _save_tool_execution(self, message, timestamp: str):
         self._write_log(self._wrap_title("Tool Execution"))
-        self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\ntool execution: {message['name']}\nResult:\n---\n{message['content']}\n---")
+        name = getattr(message, 'name', None) or message.get('name', 'Unknown')
+        content = getattr(message, 'content', None) or message.get('content', '')
+        self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\ntool execution: {name}\nResult:\n---\n{content}\n---")
     def _print_assistant_message(self, message, timestamp: str):
         self.console.print(self._wrap_title("Assistant Message", "bold light_salmon3"))
-        self.console.print(f"{self._wrap_timestamp(timestamp, color=True)}\n[bold blue]{message['sender']}[/bold blue]:", end=" ")
-        if message["content"]: self.console.print(escape(message["content"]), highlight=True, emoji=True) 
+        sender = getattr(message, 'sender', None) or message.get('sender', 'Unknown')
+        content = getattr(message, 'content', None) or message.get('content', None)
+        self.console.print(f"{self._wrap_timestamp(timestamp, color=True)}\n[bold blue]{sender}[/bold blue]:", end=" ")
+        if content: self.console.print(escape(content), highlight=True, emoji=True) 
         else: self.console.print(None, highlight=True, emoji=True)
     def _save_assistant_message(self, message, timestamp: str):
         self._write_log(self._wrap_title("Assistant Message"))
-        content = message["content"] if message["content"] else None
-        self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\n{message['sender']}: {content}")
+        sender = getattr(message, 'sender', None) or message.get('sender', 'Unknown')
+        content = getattr(message, 'content', None) or message.get('content', None)
+        self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\n{sender}: {content}")
     def _print_tool_call(self, tool_calls: List, timestamp: str):
-        if len(tool_calls) >= 1: self.console.print(self._wrap_title("Tool Calls", "bold light_pink1"))
+        if tool_calls and len(tool_calls) >= 1: self.console.print(self._wrap_title("Tool Calls", "bold light_pink1"))
 
-        for tool_call in tool_calls:
-            f = tool_call["function"]
-            name, args = f["name"], f["arguments"]
-            arg_str = self._warp_args(args)
-            self.console.print(f"{self._wrap_timestamp(timestamp, color=True)}\n[bold purple]{name}[/bold purple]({escape(arg_str)})")
+        if tool_calls:
+            for tool_call in tool_calls:
+                if hasattr(tool_call, 'function'):
+                    f = tool_call.function
+                    name = getattr(f, 'name', 'Unknown')
+                    args = getattr(f, 'arguments', '{}')
+                else:
+                    f = tool_call.get("function", {})
+                    name = f.get("name", "Unknown")
+                    args = f.get("arguments", "{}")
+                arg_str = self._warp_args(args)
+                self.console.print(f"{self._wrap_timestamp(timestamp, color=True)}\n[bold purple]{name}[/bold purple]({escape(arg_str)})")
     def _save_tool_call(self, tool_calls: List, timestamp: str):
-        if len(tool_calls) >= 1: self._write_log(self._wrap_title("Tool Calls"))
+        if tool_calls and len(tool_calls) >= 1: self._write_log(self._wrap_title("Tool Calls"))
 
-        for tool_call in tool_calls:
-            f = tool_call["function"]
-            name, args = f["name"], f["arguments"]
-            arg_str = self._warp_args(args)
-            self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\n{name}({arg_str})")
+        if tool_calls:
+            for tool_call in tool_calls:
+                if hasattr(tool_call, 'function'):
+                    f = tool_call.function
+                    name = getattr(f, 'name', 'Unknown')
+                    args = getattr(f, 'arguments', '{}')
+                else:
+                    f = tool_call.get("function", {})
+                    name = f.get("name", "Unknown")
+                    args = f.get("arguments", "{}")
+                arg_str = self._warp_args(args)
+                self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\n{name}({arg_str})")
 
     def pretty_print_messages(self, message, **kwargs) -> None:
-        # for message in messages:
-        if message["role"] != "assistant" and message["role"] != "tool":
+        # Handle both dict and object access patterns for compatibility
+        if hasattr(message, 'role'):
+            role = message.role
+            content = getattr(message, 'content', None)
+            tool_calls = getattr(message, 'tool_calls', [])
+            sender = getattr(message, 'sender', None)
+            name = getattr(message, 'name', None)
+        else:
+            role = message.get("role")
+            content = message.get("content")
+            tool_calls = message.get("tool_calls", [])
+            sender = message.get("sender")
+            name = message.get("name")
+        
+        if role != "assistant" and role != "tool":
             return
-        # console = Console()
         
         # handle tool call
-        if message["role"] == "tool":
+        if role == "tool":
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             if self.log_path: self._save_tool_execution(message, timestamp)
             if self.debug: self._print_tool_execution(message, timestamp)
@@ -110,10 +143,10 @@ class MetaChainLogger:
         if self.debug: self._print_assistant_message(message, timestamp)
 
         # print tool calls in purple, if any
-        tool_calls = message.get("tool_calls") or []
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if self.log_path: self._save_tool_call(tool_calls, timestamp)
-        if self.debug: self._print_tool_call(tool_calls, timestamp)
+        if tool_calls:  # Check if tool_calls exists and is not None/empty
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if self.log_path: self._save_tool_call(tool_calls, timestamp)
+            if self.debug: self._print_tool_call(tool_calls, timestamp)
 class LoggerManager:
     _instance = None
     _logger: MetaChainLogger = None

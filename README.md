@@ -153,10 +153,10 @@ Create an environment variable file based on the provided '.env.template' file. 
 DOCKER_WORKPLACE_NAME=workplace_paper
 # base image of the research agent
 BASE_IMAGES=tjbtech1/airesearcher:v1
-# completion model name, configuration details see: https://docs.litellm.ai/docs/
-COMPLETION_MODEL=openrouter/google/gemini-2.5-pro-preview-05-20
-# cheep model name, configuration details see: https://docs.litellm.ai/docs/
-CHEEP_MODEL=openrouter/google/gemini-2.5-pro-preview-05-20
+# completion model name, configuration details see: https://docs.ollama.ai/
+COMPLETION_MODEL=llama3.2
+# cheep model name, configuration details see: https://docs.ollama.ai/
+CHEEP_MODEL=llama3.2
 # specific gpu of the research agent, can be: 
 # '"device=0"' using the first gpu
 # '"device=0,1"' using the first and second gpu

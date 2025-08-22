@@ -36,9 +36,9 @@ LOG_PATH = global_state.LOG_PATH
 EVAL_MODE = str_to_bool(os.getenv('EVAL_MODE', False))
 BASE_IMAGES = os.getenv('BASE_IMAGES', "tjbtech1/paperapp:latest")
 
-COMPLETION_MODEL = os.getenv('COMPLETION_MODEL', "gpt-4o-2024-08-06") # gpt-4o-2024-08-06
-EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', "text-embedding-3-small")
-CHEEP_MODEL = os.getenv('CHEEP_MODEL', "gpt-4o-mini-2024-07-18")
+COMPLETION_MODEL = os.getenv('COMPLETION_MODEL', "llama3.2") # Default to Ollama model
+EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', "llama3.2") # Default to Ollama model
+CHEEP_MODEL = os.getenv('CHEEP_MODEL', "llama3.2") # Default to Ollama model
 # BASE_URL = os.getenv('BASE_URL', None)
 
 # GPUS = os.getenv('GPUS', "all")
@@ -47,8 +47,12 @@ GPUS = os.getenv('GPUS', None)
 # platform
 PLATFORM = os.getenv('PLATFORM', "linux/amd64")
 
+# Ollama configuration
+OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', "http://localhost:11434")
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', "llama3.2")
+
 FN_CALL = str_to_bool(os.getenv('FN_CALL', True))
-API_BASE_URL = os.getenv('API_BASE_URL', None)
+API_BASE_URL = os.getenv('API_BASE_URL', OLLAMA_BASE_URL)
 ADD_USER = str_to_bool(os.getenv('ADD_USER', False))
 
 NON_FN_CALL = str_to_bool(os.getenv('NON_FN_CALL', False))

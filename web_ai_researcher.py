@@ -66,7 +66,7 @@ def setup_logging():
 
     logging.info("Logging system initialized, log file: %s", log_file)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+    logging.getLogger("Ollama").setLevel(logging.WARNING)
     return log_file
 
 
@@ -127,7 +127,7 @@ def return_paper_log():
 
     logging.info("Logging system initialized, log file: %s", log_file)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+    logging.getLogger("Ollama").setLevel(logging.WARNING)
     return log_file
 
 
@@ -553,6 +553,8 @@ def run_ai_researcher(question: str, reference: str, example_module: str) -> Tup
             answer = main_ai_researcher(question, reference, example_module)
             logging.info("Sucessully Runing AI Researcher")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logging.error(f"Error occurred while running Researcher: {str(e)}")
             return (
                 f"运行 Researcher 时发生错误：{str(e)}",

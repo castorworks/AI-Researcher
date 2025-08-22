@@ -1,4 +1,16 @@
-from litellm.types.utils import ChatCompletionMessageToolCall, Function, Message
+from .ollama_client import Message
+from typing import List, Dict, Any
+
+# Define compatible types
+class ChatCompletionMessageToolCall:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class Function:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 from typing import List, Callable, Union, Optional, Tuple
 
 # Third-party imports

@@ -11,7 +11,13 @@ import json
 import re
 from typing import Iterable
 
-from litellm import ChatCompletionToolParam
+from typing import Dict, Any
+
+# Define compatible type
+class ChatCompletionToolParam:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 class FunctionCallConversionError(Exception):
     """Exception raised when FunctionCallingConverter failed to convert a non-function call message to a function call message.

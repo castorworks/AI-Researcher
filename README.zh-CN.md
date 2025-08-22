@@ -1,31 +1,3 @@
-<a name="readme-top"></a>
-
-<div align="center">
-  <img src="./assets/ai-researcher.png" alt="Logo" width="400">
-  <h1 align="center">AI-Researcher：自主科学创新</h1>
-</div>
-
-
-<div align="center">
-  <a href="https://autoresearcher.github.io"><img src="https://img.shields.io/badge/Project-Page-blue?style=for-the-badge&color=FFE165&logo=homepage&logoColor=white" alt="项目页面"></a>
-  <a href="https://join.slack.com/t/ai-researchergroup/shared_invite/zt-30y5a070k-C0ajQt1zmVczFnfGkIicvA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="加入我们的 Slack 社区"></a>
-  <a href="https://discord.gg/zBNYTk5q2g"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="加入我们的 Discord 社区"></a>
-  <br/>
-  <a href="https://autoresearcher.github.io/docs"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="查看文档"></a>
-  <a href="https://arxiv.org/abs/2505.18705"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="论文"></a>
-  <a href="https://autoresearcher.github.io/leaderboard"><img src="https://img.shields.io/badge/DATASETS-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="基准数据集"></a>
-  <hr>
-</div>
-
-欢迎来到 **AI-Researcher**🤗。AI-Researcher 在**自动化科学发现**🔬方面带来革命性突破，提出了一个从根本上**重塑传统科研范式**的新系统。该平台具备如下能力：
-
-- 🎯 **完全自主**：端到端的研究自动化
-- 🔄 **无缝编排**：从概念到发表一体化流程
-- 🧠 **先进 AI 集成**：由尖端 AI 智能体驱动
-- 🚀 **加速科研**：高效推进科学创新
-
---------------------------------------------------------------------------------
-
 ✨ AI-Researcher 支持两种层次的用户输入 ✨
 
 **Level 1：详细想法描述**
@@ -55,29 +27,6 @@
     <figcaption><em>AI-Researcher 概览。</em></figcaption>
   </figure>
 </div>
-
-
-<span id='news'/>
-
-## 🔥 新闻
-
-<div class="scrollable">
-  <ul>
-    <li><strong>[2025-05-24]</strong>：&nbsp;🎉🎉 <b>重大版本发布！AI-Researcher 全面升级！</b> 🚀
-      <br>我们非常高兴地宣布 AI-Researcher 的重要里程碑：
-      <ul>
-        <li>📄 <b><a href="https://arxiv.org/abs/2505.18705">学术论文发布</a></b>：详述我们的创新方法与实验结果</li>
-        <li>📊 <b><a href="https://autoresearcher.github.io/leaderboard">基准套件</a></b>：完整的评测框架与数据集</li>
-        <li>🖥️ <b>Web GUI 界面</b>：更便捷地开展研究</li>
-      </ul>
-      <b>🤝 欢迎加入！</b> 我们欢迎研究者、开发者与 AI 爱好者共同贡献，推进 AI 科研发展。无论是代码、问题反馈、功能建议，还是文档改进，都是宝贵贡献！
-      <br>💡 <i>一起打造更聪明的 AI 科研助手！</i>
-    </li>
-    <li><strong>[2025-03-04]</strong>：&nbsp;🎉🎉我们发布了 <b>AI-Researcher</b>！包含完整框架、数据集、基准构建流水线等。敬请期待更多更新！🚀</li>
-  </ul>
-</div>
-
-<span id='table-of-contents'/>
 
 ## 📑 目录
 
@@ -150,10 +99,10 @@ cd ./docker && docker build -t tjbtech1/airesearcher:v1 .
 DOCKER_WORKPLACE_NAME=workplace_paper
 # 研究智能体的基础镜像
 BASE_IMAGES=tjbtech1/airesearcher:v1
-# 补全模型名称，配置详见：https://docs.litellm.ai/docs/
-COMPLETION_MODEL=openrouter/google/gemini-2.5-pro-preview-05-20
-# 便宜模型名称，配置详见：https://docs.litellm.ai/docs/
-CHEEP_MODEL=openrouter/google/gemini-2.5-pro-preview-05-20
+# 补全模型名称，配置详见：https://docs.ollama.ai/
+COMPLETION_MODEL=llama3.2
+# 便宜模型名称，配置详见：https://docs.ollama.ai/
+CHEEP_MODEL=llama3.2
 # 指定 GPU：
 # '"device=0"' 使用第 1 块 GPU
 # '"device=0,1"' 使用第 1 与第 2 块 GPU

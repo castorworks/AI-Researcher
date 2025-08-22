@@ -4,7 +4,7 @@ from research_agent.inno.memory.rag_memory import Memory, Reranker
 import json
 import math
 import os
-from litellm import completion
+from research_agent.inno.ollama_client import completion
 from research_agent.inno.memory.utils import chunking_by_token_size
 
 class PaperMemory(Memory):

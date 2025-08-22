@@ -1,7 +1,7 @@
 import os
 from typing import List, Dict
 from research_agent.inno.memory.rag_memory import Memory, Reranker
-from litellm import completion
+from research_agent.inno.ollama_client import completion
 import re
 
 class CodeMemory(Memory):

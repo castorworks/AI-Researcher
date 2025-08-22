@@ -5,10 +5,11 @@ from collections import defaultdict
 from typing import List, Callable, Union
 from datetime import datetime
 # Local imports
-import litellm
 import difflib
-from litellm import ContextWindowExceededError, BadRequestError
-from litellm.types.utils import Message as litellmMessage
+from .ollama_client import (
+    ContextWindowExceededError, BadRequestError, Message as litellmMessage, 
+    completion, acompletion, APIError, supports_function_calling
+)
 from .util import function_to_json, debug_print, merge_chunk, pretty_print_messages, safe_json_loads
 from .types import (
     Agent,
@@ -19,11 +20,9 @@ from .types import (
     Response,
     Result,
 )
-from litellm import completion, acompletion
 from pathlib import Path
 from .logger import MetaChainLogger, LoggerManager
 from httpx import RemoteProtocolError, ConnectError
-from litellm.exceptions import APIError
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -37,8 +36,10 @@ from research_agent.inno.fn_call_converter import convert_tools_to_description, 
 from research_agent.inno.memory.utils import encode_string_by_tiktoken, decode_tokens_by_tiktoken
 import re
 
-# litellm.set_verbose=True
-# litellm.num_retries = 3
+# Ollama configuration (compatible with litellm)
+# from .ollama_client import set_verbose, set_num_retries
+# set_verbose(True)
+# set_num_retries(3)
 
 def should_retry_error(retry_state: RetryCallState):
     """检查是否应该重试错误
@@ -190,7 +191,15 @@ class MetaChain:
             messages=[], agent=None, context_variables={})
         
         for tool_call in tool_calls:
-            name = tool_call.function.name
+            # Helper function to get tool call properties safely
+            def get_tool_call_props(tool_call):
+                if hasattr(tool_call, 'function'):
+                    return getattr(tool_call.function, 'name', ''), getattr(tool_call.function, 'arguments', '{}')
+                else:
+                    func_data = tool_call.get('function', {})
+                    return func_data.get('name', ''), func_data.get('arguments', '{}')
+            
+            name, arguments = get_tool_call_props(tool_call)
             # handle missing tool case, skip to next tool
             if name not in function_map:
                 # Try to resolve common issues:
@@ -216,16 +225,17 @@ class MetaChain:
                     name = resolved_name
                 else:
                     self.logger.info(f"Tool {name} not found in function map.", title="Tool Call Error", color="red")
+                    tool_call_id = getattr(tool_call, 'id', None) or tool_call.get('id', '')
                     partial_response.messages.append(
                         {
                             "role": "tool",
-                            "tool_call_id": tool_call.id,
+                            "tool_call_id": tool_call_id,
                             "name": name,
                             "content": f"[Tool Call Error] Error: Tool {name} not found.",
                         }
                     )
                     continue
-            args = safe_json_loads(tool_call.function.arguments)
+            args = safe_json_loads(arguments)
             
             # debug_print(
             #     debug, f"Processing tool call: {name} with arguments {args}")
@@ -240,10 +250,11 @@ class MetaChain:
                 #     raw_result = function_map[name](tool_call.function.arguments)
                 # else:
                 self.logger.info(f"[Tool Call Error] The execution of tool {name} failed. Error: {e}", title="Tool Call Error", color="red")
+                tool_call_id = getattr(tool_call, 'id', None) or tool_call.get('id', '')
                 partial_response.messages.append(
                     {
                         "role": "tool",
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call_id,
                         "name": name,
                         "content": f"[Tool Call Error] The execution of tool {name} failed. Error: {e}",
                     }
@@ -253,23 +264,24 @@ class MetaChain:
 
             result: Result = self.handle_function_result(raw_result, debug)
     
+            tool_call_id = getattr(tool_call, 'id', None) or tool_call.get('id', '')
             partial_response.messages.append(
                 {
                     "role": "tool",
-                    "tool_call_id": tool_call.id,
+                    "tool_call_id": tool_call_id,
                     "name": name,
                     "content": result.value,
                 }
             )
             self.logger.pretty_print_messages(partial_response.messages[-1])
             if result.image: 
-                assert handle_mm_func, f"handle_mm_func is not provided, but an image is returned by tool call {name}({tool_call.function.arguments})"
+                assert handle_mm_func, f"handle_mm_func is not provided, but an image is returned by tool call {name}({arguments})"
                 partial_response.messages.append(
                 {
                     "role": "user",
                     "content": [
-                    # {"type":"text", "text":f"After take last action `{name}({tool_call.function.arguments})`, the image of current page is shown below. Please take next action based on the image, the current state of the page as well as previous actions and observations."},
-                    {"type":"text", "text":handle_mm_func(name, tool_call.function.arguments)},
+                    # {"type":"text", "text", "text":f"After take last action `{name}({arguments})`, the image of current page is shown below. Please take next action based on the image, the current state of the page as well as previous actions and observations."},
+                    {"type":"text", "text":handle_mm_func(name, arguments)},
                     {
                     "type":"image_url",
                         "image_url":{
@@ -396,7 +408,8 @@ class MetaChain:
         create_model = model_override or agent.model
         if create_model not in NOT_USE_FN_CALL:
             
-            # assert litellm.supports_function_calling(model = create_model) == True, f"Model {create_model} does not support function calling, please set `FN_CALL=False` to use non-function calling mode"
+            # Check if model supports function calling
+            assert supports_function_calling(create_model) == True, f"Model {create_model} does not support function calling, please set `FN_CALL=False` to use non-function calling mode"
             create_params = {
                 "model": create_model,
                 "messages": messages,
@@ -550,7 +563,14 @@ class MetaChain:
                     self.logger.info("Ending turn.", title="End Turn", color="red")
                     break
             else: 
-                if (message.tool_calls and message.tool_calls[0].function.name == "case_resolved") or not execute_tools:
+                # Helper function to get tool name safely
+                def get_tool_name(tool_call):
+                    if hasattr(tool_call, 'function'):
+                        return getattr(tool_call.function, 'name', '')
+                    else:
+                        return tool_call.get('function', {}).get('name', '')
+                
+                if (message.tool_calls and get_tool_name(message.tool_calls[0]) == "case_resolved") or not execute_tools:
                     self.logger.info("Ending turn with case resolved.", title="End Turn", color="red")
                     try:
                         partial_response = self.handle_tool_calls(
@@ -567,7 +587,7 @@ class MetaChain:
                         self.logger.info(f"Error: {e}", title="Error", color="red")
                         history.append({"role": "error", "content": f"Error: {e}"})
                         break
-                elif (message.tool_calls and message.tool_calls[0].function.name == "case_not_resolved") or not execute_tools:
+                elif (message.tool_calls and get_tool_name(message.tool_calls[0]) == "case_not_resolved") or not execute_tools:
                     self.logger.info("Ending turn with case not resolved.", title="End Turn", color="red")
                     try:
                         partial_response = self.handle_tool_calls(

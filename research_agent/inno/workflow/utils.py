@@ -2,7 +2,7 @@ from typing import Dict
 import json
 from research_agent.inno.util import safe_json_loads
 from research_agent.inno.workflow import Graph
-from litellm import completion
+from research_agent.inno.ollama_client import completion
 
 def transfer_fschema_to_dict(fschema: Dict) -> Dict:
     """
