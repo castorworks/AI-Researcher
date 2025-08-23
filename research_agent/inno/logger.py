@@ -59,26 +59,26 @@ class MetaChainLogger:
         self.console.print(self._wrap_title("Tool Execution", "bold pink3"))
         self.console.print(self._wrap_timestamp(timestamp, color=True))
         self.console.print("[bold blue]Tool Execution:[/bold blue]", end=" ")
-        name = getattr(message, 'name', None) or message.get('name', 'Unknown')
-        content = getattr(message, 'content', None) or message.get('content', '')
+        name = getattr(message, 'name', None) or getattr(message, 'role', 'Unknown')
+        content = getattr(message, 'content', None) or ''
         self.console.print(f"[bold purple]{name}[/bold purple]\n[bold blue]Result:[/bold blue]")
         self.console.print(f"---\n{escape(content)}\n---")
     def _save_tool_execution(self, message, timestamp: str):
         self._write_log(self._wrap_title("Tool Execution"))
-        name = getattr(message, 'name', None) or message.get('name', 'Unknown')
-        content = getattr(message, 'content', None) or message.get('content', '')
+        name = getattr(message, 'name', None) or getattr(message, 'role', 'Unknown')
+        content = getattr(message, 'content', None) or ''
         self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\ntool execution: {name}\nResult:\n---\n{content}\n---")
     def _print_assistant_message(self, message, timestamp: str):
         self.console.print(self._wrap_title("Assistant Message", "bold light_salmon3"))
-        sender = getattr(message, 'sender', None) or message.get('sender', 'Unknown')
-        content = getattr(message, 'content', None) or message.get('content', None)
+        sender = getattr(message, 'sender', None) or getattr(message, 'role', 'Unknown')
+        content = getattr(message, 'content', None)
         self.console.print(f"{self._wrap_timestamp(timestamp, color=True)}\n[bold blue]{sender}[/bold blue]:", end=" ")
         if content: self.console.print(escape(content), highlight=True, emoji=True) 
         else: self.console.print(None, highlight=True, emoji=True)
     def _save_assistant_message(self, message, timestamp: str):
         self._write_log(self._wrap_title("Assistant Message"))
-        sender = getattr(message, 'sender', None) or message.get('sender', 'Unknown')
-        content = getattr(message, 'content', None) or message.get('content', None)
+        sender = getattr(message, 'sender', None) or getattr(message, 'role', 'Unknown')
+        content = getattr(message, 'content', None)
         self._write_log(f"{self._wrap_timestamp(timestamp, color=False)}\n{sender}: {content}")
     def _print_tool_call(self, tool_calls: List, timestamp: str):
         if tool_calls and len(tool_calls) >= 1: self.console.print(self._wrap_title("Tool Calls", "bold light_pink1"))

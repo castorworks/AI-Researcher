@@ -504,8 +504,8 @@ def main(args, ideas, references):
     with open(args.instance_path, "r", encoding="utf-8") as f:
         eval_instance = json.load(f)
     instance_id = eval_instance["instance_id"]
-    local_root = os.path.join(os.getcwd(),"workplace_paper" , f"task_{instance_id}" + "_" + COMPLETION_MODEL.replace("/", "__"),  args.workplace_name)
-    container_name = args.container_name + "_" + instance_id + "_" + COMPLETION_MODEL.replace("/", "__")
+    local_root = os.path.join(os.getcwd(),"workplace_paper" , f"task_{instance_id}" + "_" + COMPLETION_MODEL.replace("/", "__").replace(":", "_"),  args.workplace_name)
+    container_name = args.container_name + "_" + instance_id + "_" + COMPLETION_MODEL.replace("/", "__").replace(":", "_")
     os.makedirs(local_root, exist_ok=True)
     env_config = DockerConfig(container_name = container_name, 
                               workplace_name = args.workplace_name, 
